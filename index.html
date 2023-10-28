@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>API Integration</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+      }
+
+      h1 {
+        color: #333;
+      }
+
+      form {
+        margin: 20px;
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      input[type="text"],
+      input[type="password"],
+      input[type="email"] {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+      }
+
+      button {
+        background-color: #007bff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px;
+      }
+
+      th,
+      td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #007bff;
+        color: #fff;
+      }
+
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+
+      tr:hover {
+        background-color: #ddd;
+      }
+
+      /* Style the Customer List Screen */
+      #customerListScreen {
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      /* Style the Add a New Customer Screen */
+      #addCustomerScreen {
+        padding: 20px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Login Screen -->
+    <div id="loginScreen">
+      <h1>Login</h1>
+      <form id="loginForm">
+        <label for="login_id">Email:</label>
+        <input type="text" id="login_id" required /><br />
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" required /><br />
+
+        <button type="submit" id="loginButton">Login</button>
+      </form>
+    </div>
+
+    <!-- Customer List Screen -->
+    <div id="customerListScreen" style="display: none">
+      <h1>Customer List</h1>
+      <table id="customerTable">
+        <thead>
+          <tr>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Email</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="customerList">
+          <!-- Customer data will be displayed here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add a New Customer Screen -->
+    <div id="addCustomerScreen" style="display: none">
+      <h1>Add a New Customer</h1>
+      <form id="addCustomerForm">
+        <label for="first_name">First Name:</label>
+        <input type="text" id="first_name" required /><br />
+
+        <label for="last_name">Last Name:</label>
+        <input type="text" id="last_name" required /><br />
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" required /><br />
+
+        <!-- Add other input fields here for address, city, state, and phone -->
+
+        <button type="submit">Create</button>
+      </form>
+    </div>
+
+    <script>
+      const apiUrl = "https://qa2.sunbasedata.com/sunbase/portal/api";
+      let token = null;
+
+      const loginForm = document.getElementById("loginForm");
+      const addCustomerForm = document.getElementById("addCustomerForm");
+
+      loginForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const loginId = document.getElementById("login_id").value;
+        const password = document.getElementById("password").value;
+
+        try {
+          const response = await fetch(`${apiUrl}/assignment_auth.jsp`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              login_id: loginId,
+              password: password,
+            }),
+          });
+
+          if (response.status === 200) {
+            const data = await response.json();
+            token = data.token;
+            // Handle successful login
+          } else {
+            alert("Login failed. Please check your credentials.");
+          }
+        } catch (error) {
+          console.error("Login error:", error);
+        }
+      });
+
+      addCustomerForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const firstName = document.getElementById("first_name").value;
+        const lastName = document.getElementById("last_name").value;
+        const email = document.getElementById("email").value;
+
+        try {
+          const response = await fetch(`${apiUrl}/assignment.jsp?cmd=create`, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              first_name: firstName,
+              last_name: lastName,
+              email: email,
+              // Add other fields as needed
+            }),
+          });
+
+          if (response.status === 201) {
+            // Handle successful customer creation
+            addCustomerForm.reset();
+          } else {
+            alert("Failed to create a customer. Please try again.");
+          }
+        } catch (error) {
+          console.error("Create customer error:", error);
+        }
+      });
+
+      // Function to fetch and display the customer list
+      async function fetchCustomerList() {
+        try {
+          const response = await fetch(
+            `${apiUrl}/assignment.jsp?cmd=get_customer_list`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            const data = await response.json();
+            // Handle the customer list data
+          } else {
+            alert("Failed to retrieve the customer list.");
+          }
+        } catch (error) {
+          console.error("Fetch customer list error:", error);
+        }
+      }
+
+      // Implement the functions for deleting and updating customers
+      async function deleteCustomer(uuid) {
+        // Confirm with the user before deleting
+        const confirmation = confirm(
+          "Are you sure you want to delete this customer?"
+        );
+
+        if (confirmation) {
+          try {
+            const response = await fetch(
+              `${apiUrl}/assignment.jsp?cmd=delete&uuid=${uuid}`,
+              {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }
+            );
+
+            if (response.status === 200) {
+              // The customer was successfully deleted
+              // You can provide user feedback or refresh the customer list
+              fetchCustomerList();
+            } else {
+              // Handle the case where the deletion request was not successful
+              console.error(
+                `Failed to delete customer. Status: ${response.status}`
+              );
+            }
+          } catch (error) {
+            console.error("Delete customer error:", error);
+          }
+        }
+      }
+
+      async function updateCustomer(uuid) {
+        // Get the updated customer data from the form or user input
+        const updatedFirstName =
+          document.getElementById("updated_first_name").value;
+        const updatedLastName =
+          document.getElementById("updated_last_name").value;
+        const updatedEmail = document.getElementById("updated_email").value;
+
+        // Create an object with the updated data
+        const updatedCustomerData = {
+          first_name: updatedFirstName,
+          last_name: updatedLastName,
+          email: updatedEmail,
+          // Add other fields as needed
+        };
+
+        try {
+          const response = await fetch(
+            `${apiUrl}/assignment.jsp?cmd=update&uuid=${uuid}`,
+            {
+              method: "PUT", // Use PUT or PATCH as appropriate for your server
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updatedCustomerData),
+            }
+          );
+
+          if (response.status === 200) {
+            // The customer was successfully updated
+            // You can provide user feedback or refresh the customer list
+            fetchCustomerList();
+          } else {
+            // Handle the case where the update request was not successful
+            console.error(
+              `Failed to update customer. Status: ${response.status}`
+            );
+          }
+        } catch (error) {
+          console.error("Update customer error:", error);
+        }
+      }
+    </script>
+  </body>
+</html>
